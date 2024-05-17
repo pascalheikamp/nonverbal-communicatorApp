@@ -33,7 +33,7 @@ function HomePage() {
                             <div className={"flex ml-5  flex-col"}>
                                 <h2 className={"font-bold text-2xl"}>Play the game!</h2>
                                 <p className={"mt-3"}>The instructions will be displayed on the screen. First you got tutorial to learn gestures from different countries!</p>
-                                <button className={"mt-3 bg-green-900 w-32 rounded h-10"}><h4 className={"text-white text-xl"}>Play</h4></button>
+                                <button className={"mt-3 bg-green-900 w-32 rounded h-10"}><h4 className={"text-white text-xl"}><a href={"/introduction"}>Play</a></h4></button>
                             </div>
                         </section>
                     </div>
