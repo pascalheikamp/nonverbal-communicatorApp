@@ -5,6 +5,7 @@ import IntroPage from "./pages/IntroPage.jsx";
 import App from './App.jsx'
 import './index.css'
 import HomePage from "./pages/HomePage.jsx";
+import TrainPosePage from "./pages/TrainPosePage.jsx";
 
 const router = createBrowserRouter([
     {
@@ -18,6 +19,10 @@ const router = createBrowserRouter([
     {
         path:'introduction',
         element:<IntroPage/>
+    },
+    {
+        path:"trainpose",
+        element: <TrainPosePage/>
     }
 ])
 

@@ -5,6 +5,7 @@ import ChinaFlag from '../assets/china-flag.png'
 import ForwardButton from '../assets/forwardButton.png';
 import {useRef, useState} from "react";
 import Webcam from "react-webcam";
+import CameraArea from "./CameraArea.jsx";
 import './introduction.css';
 import Slide from "./Slide.jsx";
 
@@ -37,9 +38,7 @@ const IntroductionSlide = () => {
         {
             id: "3",
             title: "Step 3",
-            description: "Look at the pose that is displayed on the screen.n" +
-                "                    Try that pose!if you do it correctly, it will show up some information.\n" +
-                "                    The information tells you what the pose means and from which country it is.",
+            description: "Description of slide 3",
             imageUrl:<Image/>
         },
     ]
@@ -56,9 +55,6 @@ const IntroductionSlide = () => {
     let contentSlides = [contentSlide1, contentSlide2, contentSlide3]
     // console.log(id)
 
-    function showNextSlide(id, data) {
-
-    }
 
     return (
         <>
@@ -70,7 +66,7 @@ const IntroductionSlide = () => {
             }} className={"flex justify-center pt-6"}>
                 <div className={"absolute flex justify-evenly top-23 bg-transparent w-full  pl-10 pr-10"}>
                     <div>
-                        <Webcam className={"mr-96 w-96 h-72"} hidden={showCamera}></Webcam>
+                        <CameraArea width={390} height={300} showCam={showCamera}/>
                         <div className={"mr-40 mt-3 flex justify-around"}>
                             <button onClick={() => {
                                 setShowCamera(false)
