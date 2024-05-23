@@ -2,7 +2,7 @@ import Navigation from "../components/Navigation.jsx";
 import CameraArea from "../components/CameraArea.jsx";
 import {Camera} from "@mediapipe/camera_utils";
 import {FilesetResolver, HandLandmarker, DrawingUtils} from "@mediapipe/tasks-vision";
-import {useEffect, useRef} from "react";
+import {useEffect, useRef, useState} from "react";
 import kNear from "../kNear.js";
 import Webcam from "react-webcam";
 
@@ -10,9 +10,10 @@ import Webcam from "react-webcam";
 function TrainPosePage() {
     const canvasRef = useRef(null);
     const webcamRef = useRef(null);
-    const poseNameRef = useRef(null)
+    const poseNameRef = useRef(null);
+    const [prediction, setPrediction] = useState("")
     let trainPose = false
-    let setPrediction = false
+    let currentPrediction = false
     let lastVideoTime = -1
     let pose;
     let handLandMarker;
@@ -24,7 +25,7 @@ function TrainPosePage() {
     }
 
     const togglePredictPose = () => {
-        setPrediction = !setPrediction
+        currentPrediction = !currentPrediction
     }
 
     const removePoses = () => {
@@ -41,7 +42,7 @@ function TrainPosePage() {
 
     function getPosesFromLocalStorage() {
         let coordinates = JSON.parse(localStorage.getItem("coordinates"));
-        if(!coordinates) return
+        if (!coordinates) return
         for (const coordinate of coordinates) {
             machine.learn(coordinate.landmarks, coordinate.label)
         }
@@ -57,6 +58,7 @@ function TrainPosePage() {
         console.log(landmarkResultList);
         let prediction = machine.classify(landmarkResultList);
         console.log(prediction);
+        setPrediction(prediction);
     }
 
     const addToLocalStorage = (pose, landmarks) => {
@@ -111,7 +113,7 @@ function TrainPosePage() {
                         if (trainPose) {
                             registerPose(poseNameRef.current.value, pose)
                         }
-                        if (setPrediction) {
+                        if (currentPrediction) {
                             predictPose(pose);
                         }
                         for (const landmark of result.landmarks) {
@@ -169,13 +171,18 @@ function TrainPosePage() {
                     <div className={""}>
                         <input ref={poseNameRef} placeholder={"pose name..."}
                                className={"mr-10 pl-3 border-2 border-primaryColor rounded-3xl"} type={"text"}/>
-                        <button className={"rounded shadow-xl w-32 bg-primaryColor"} onClick={toggleTrainPose}>Train
-                            pose
-                        </button>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input onChange={toggleTrainPose} type="checkbox" className="sr-only peer toggle" />
+                            <div className={"w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"}></div>
+                            <p className={"ml-5"}>Train pose</p>
+                        </label>
+                        <p className={"absolute top-10 font-bold"}>The prediction is: {prediction}</p>
                     </div>
-                    <button onClick={togglePredictPose}
-                            className={"rounded shadow-xl w-32 bg-primaryColor"}>Prediction
-                    </button>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input onChange={togglePredictPose} type="checkbox" className="sr-only peer toggle" />
+                        <div className={"w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"}></div>
+                        <p className={"ml-5"}>Predict pose</p>
+                    </label>
                     <button onClick={removePoses} className={"rounded shadow-xl w-32 bg-primaryColor"}>Remove poses
                     </button>
                     <button className={"rounded shadow-xl w-32 bg-primaryColor"}>Open camera</button>
