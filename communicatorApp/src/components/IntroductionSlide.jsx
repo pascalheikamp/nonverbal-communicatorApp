@@ -2,23 +2,107 @@ import Image from '../assets/hand-tracking-mediapipe.png';
 import BackButton from '../assets/backButton.png';
 import PoseOne from '../assets/pose1.png';
 import ChinaFlag from '../assets/china-flag.png'
+import Camera from "@mediapipe/camera_utils";
 import ForwardButton from '../assets/forwardButton.png';
-import {useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import Webcam from "react-webcam";
 import CameraArea from "./CameraArea.jsx";
 import './introduction.css';
 import Slide from "./Slide.jsx";
+import kNear from "../kNear.js";
+import {DrawingUtils, FilesetResolver, HandLandmarker} from "@mediapipe/tasks-vision";
 
 const IntroductionSlide = () => {
     const webcamRef = useRef(null);
-    // const slideContainer = useRef(null)
-    // const secondSlide = <div className={" ml-7"}><h2 className={"font-bold text-xl"}>Step 2: Observation of the
-    //     pose</h2><p className={"mt-3"}>Look at the pose that is displayed on the screen.</p>
-    //     <p>Try that pose!if you do it correctly, it will show up some information.</p>
-    //     <p>The information tells you what the pose means and from which country it is. </p>
-    // </div>
+    const canvasRef = useRef(null);
     const resultContainer = useRef(null);
-    const [showCamera, setShowCamera] = useState(true)
+    const [showCamera, setShowCamera] = useState(true);
+    let handLandMarker;
+    let lastVideoTime = -1;
+    let pose;
+    let currentPrediction = true
+    let machine = new kNear(3);
+
+    const createHandLandMarker = async () => {
+        const vision = await FilesetResolver.forVisionTasks(
+            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
+        );
+        handLandMarker = await HandLandmarker.createFromOptions(vision, {
+            baseOptions: {
+                modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
+                delegate: "GPU"
+            },
+            runningMode: "VIDEO",
+            numHands: 2
+        })
+    }
+
+    const detectLandMarks = () => {
+        if (
+            typeof webcamRef.current !== "undefined" &&
+            webcamRef.current !== null
+        ) {
+            if (!webcamRef.current?.video) return
+            const canvasElement = canvasRef.current;
+            const canvasCtx = canvasElement.getContext("2d");
+            const drawingUtils = new DrawingUtils(canvasCtx);
+            const camera = new Camera(webcamRef.current.video, {
+                onFrame: async () => {
+                    if (!webcamRef.current?.video) return
+                    let startTimeMs = performance.now();
+                    if (lastVideoTime === webcamRef.current.video.currentTime) return
+                    lastVideoTime = webcamRef.current.video.currentTime
+                    const result = await handLandMarker.detectForVideo(webcamRef.current.video, startTimeMs);
+                    canvasCtx.save();
+                    canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+                    if (result.landmarks) {
+                        console.log(result)
+                        pose = result.landmarks
+                        // console.log(pose);
+                        if (currentPrediction) {
+                            predictPose(pose);
+                        }
+                        for (const landmark of result.landmarks) {
+                            drawingUtils.drawLandmarks(landmark, {
+                                radius: 3, color: "green"
+                            })
+                            drawingUtils.drawConnectors(landmark, HandLandmarker.POSE_CONNECTIONS);
+                        }
+                        canvasCtx.restore();
+                    }
+                },
+                width: 640,
+                height: 480,
+            });
+            camera.start();
+        }
+    }
+
+
+    function getPosesFromLocalStorage() {
+        let coordinates = JSON.parse(localStorage.getItem("coordinates"));
+        if (!coordinates) return
+        for (const coordinate of coordinates) {
+            machine.learn(coordinate.landmarks, coordinate.label)
+        }
+        console.log(coordinates);
+    }
+
+    const predictPose = (results) => {
+        let landmarkResultList = [];
+        if (!results[0]) return
+        for (let landmarkPose of results[0]) {
+            landmarkResultList.push(landmarkPose.x, landmarkPose.y);
+        }
+        console.log(landmarkResultList);
+        let prediction = machine.classify(landmarkResultList);
+        console.log(prediction);
+    }
+
+    useEffect(() => {
+        createHandLandMarker().then(detectLandMarks);
+        getPosesFromLocalStorage()
+    }, []);
 
     const slideData = [
         {
@@ -55,6 +139,21 @@ const IntroductionSlide = () => {
     let contentSlides = [contentSlide1, contentSlide2, contentSlide3]
     // console.log(id)
 
+    let styleCam = {
+        zIndex: 9,
+        width:390,
+        height:300,
+        position:"absolute",
+        visibility: true
+    }
+
+    let styleCanvas = {
+        zIndex: 9,
+        width:390,
+        height:300,
+        position:"absolute",
+        visibility: true
+    }
 
     return (
         <>
@@ -66,15 +165,18 @@ const IntroductionSlide = () => {
             }} className={"flex justify-center pt-6"}>
                 <div className={"absolute flex justify-evenly top-23 bg-transparent w-full  pl-10 pr-10"}>
                     <div>
-                        <CameraArea width={390} height={300} showCam={showCamera}/>
-                        <div className={"mr-40 mt-3 flex justify-around"}>
+                        <section>
+                            <Webcam ref={webcamRef} hidden={showCamera} style={styleCam}/>
+                            <canvas ref={canvasRef} style={styleCanvas}></canvas>
+                        </section>
+                        <div className={"mr-40 mt-80 flex justify-around"}>
                             <button onClick={() => {
                                 setShowCamera(false)
-                            }} className={"bg-primaryColor w-36 rounded shadow-2xl h-10"}><p
-                                className={"text-white"}>Open camera</p></button>
+                            }} className={"bg-green-300 w-36 rounded shadow-2xl h-10"}><p
+                                className={"text-black"}>Open camera</p></button>
                             <button onClick={() => {
                                 setShowCamera(true)
-                            }} className={"bg-primaryColor shadow-2xl rounded ml-10 w-36 h-10"}>Close camera
+                            }} className={"bg-green-300 shadow-2xl rounded ml-10 w-36 h-10"}>Close camera
                             </button>
                         </div>
                     </div>
@@ -90,7 +192,7 @@ const IntroductionSlide = () => {
                     </div>
                 </div>
                 <div
-                    className={"w-full justify-evenly flex content-between bg-red-500 pt-5 mt-80 h-72 border-gray-50"}>
+                    className={"w-full mb-10 bg-blue-50 justify-evenly flex content-between pt-5 mt-80 h-72 border-gray-50"}>
                     <Slide id={id} content={contentSlides.map((x)=>(x))}/>
                 </div>
             </section>
