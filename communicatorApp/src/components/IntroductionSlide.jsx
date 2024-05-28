@@ -3,6 +3,11 @@ import BackButton from '../assets/backButton.png';
 import PoseOne from '../assets/pose1.png';
 import ChinaFlag from '../assets/china-flag.png'
 import Camera from "@mediapipe/camera_utils";
+import 'slick-carousel/slick/slick.css';
+import 'slick-carousel/slick/slick-theme.css';
+import AliceCarousel from 'react-alice-carousel';
+import "react-alice-carousel/lib/alice-carousel.css";
+import Slider from 'react-slick';
 import ForwardButton from '../assets/forwardButton.png';
 import {useEffect, useRef, useState} from "react";
 import Webcam from "react-webcam";
@@ -23,86 +28,87 @@ const IntroductionSlide = () => {
     let currentPrediction = true
     let machine = new kNear(3);
 
-    const createHandLandMarker = async () => {
-        const vision = await FilesetResolver.forVisionTasks(
-            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
-        );
-        handLandMarker = await HandLandmarker.createFromOptions(vision, {
-            baseOptions: {
-                modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
-                delegate: "GPU"
-            },
-            runningMode: "VIDEO",
-            numHands: 2
-        })
-    }
+    // useEffect(() => {
+    //     createHandLandMarker().then(detectLandMarks);
+    //     getPosesFromLocalStorage()
+    // }, []);
 
-    const detectLandMarks = () => {
-        if (
-            typeof webcamRef.current !== "undefined" &&
-            webcamRef.current !== null
-        ) {
-            if (!webcamRef.current?.video) return
-            const canvasElement = canvasRef.current;
-            const canvasCtx = canvasElement.getContext("2d");
-            const drawingUtils = new DrawingUtils(canvasCtx);
-            const camera = new Camera(webcamRef.current.video, {
-                onFrame: async () => {
-                    if (!webcamRef.current?.video) return
-                    let startTimeMs = performance.now();
-                    if (lastVideoTime === webcamRef.current.video.currentTime) return
-                    lastVideoTime = webcamRef.current.video.currentTime
-                    const result = await handLandMarker.detectForVideo(webcamRef.current.video, startTimeMs);
-                    canvasCtx.save();
-                    canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-                    if (result.landmarks) {
-                        console.log(result)
-                        pose = result.landmarks
-                        // console.log(pose);
-                        if (currentPrediction) {
-                            predictPose(pose);
-                        }
-                        for (const landmark of result.landmarks) {
-                            drawingUtils.drawLandmarks(landmark, {
-                                radius: 3, color: "green"
-                            })
-                            drawingUtils.drawConnectors(landmark, HandLandmarker.POSE_CONNECTIONS);
-                        }
-                        canvasCtx.restore();
-                    }
-                },
-                width: 640,
-                height: 480,
-            });
-            camera.start();
-        }
-    }
+    // const createHandLandMarker = async () => {
+    //     const vision = await FilesetResolver.forVisionTasks(
+    //         "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
+    //     );
+    //     handLandMarker = await HandLandmarker.createFromOptions(vision, {
+    //         baseOptions: {
+    //             modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
+    //             delegate: "GPU"
+    //         },
+    //         runningMode: "VIDEO",
+    //         numHands: 2
+    //     })
+    // }
+
+    // const detectLandMarks = () => {
+    //     if (
+    //         typeof webcamRef.current !== "undefined" &&
+    //         webcamRef.current !== null
+    //     ) {
+    //         if (!webcamRef.current?.video) return
+    //         const canvasElement = canvasRef.current;
+    //         const canvasCtx = canvasElement.getContext("2d");
+    //         const drawingUtils = new DrawingUtils(canvasCtx);
+    //         const camera = new Camera(webcamRef.current.video, {
+    //             onFrame: async () => {
+    //                 if (!webcamRef.current?.video) return
+    //                 let startTimeMs = performance.now();
+    //                 if (lastVideoTime === webcamRef.current.video.currentTime) return
+    //                 lastVideoTime = webcamRef.current.video.currentTime
+    //                 const result = await handLandMarker.detectForVideo(webcamRef.current.video, startTimeMs);
+    //                 canvasCtx.save();
+    //                 canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    //                 if (result.landmarks) {
+    //                     console.log(result)
+    //                     pose = result.landmarks
+    //                     // console.log(pose);
+    //                     if (currentPrediction) {
+    //                         predictPose(pose);
+    //                     }
+    //                     for (const landmark of result.landmarks) {
+    //                         drawingUtils.drawLandmarks(landmark, {
+    //                             radius: 3, color: "green"
+    //                         })
+    //                         drawingUtils.drawConnectors(landmark, HandLandmarker.POSE_CONNECTIONS);
+    //                     }
+    //                     canvasCtx.restore();
+    //                 }
+    //             },
+    //             width: 640,
+    //             height: 480,
+    //         });
+    //         camera.start();
+    //     }
+    // }
 
 
-    function getPosesFromLocalStorage() {
-        let coordinates = JSON.parse(localStorage.getItem("coordinates"));
-        if (!coordinates) return
-        for (const coordinate of coordinates) {
-            machine.learn(coordinate.landmarks, coordinate.label)
-        }
-        console.log(coordinates);
-    }
+    // function getPosesFromLocalStorage() {
+    //     let coordinates = JSON.parse(localStorage.getItem("coordinates"));
+    //     if (!coordinates) return
+    //     for (const coordinate of coordinates) {
+    //         machine.learn(coordinate.landmarks, coordinate.label)
+    //     }
+    //     console.log(coordinates);
+    // }
 
-    const predictPose = (results) => {
-        let landmarkResultList = [];
-        if (!results[0]) return
-        for (let landmarkPose of results[0]) {
-            landmarkResultList.push(landmarkPose.x, landmarkPose.y);
-        }
-        console.log(landmarkResultList);
-        let prediction = machine.classify(landmarkResultList);
-        console.log(prediction);
-    }
+    // const predictPose = (results) => {
+    //     let landmarkResultList = [];
+    //     if (!results[0]) return
+    //     for (let landmarkPose of results[0]) {
+    //         landmarkResultList.push(landmarkPose.x, landmarkPose.y);
+    //     }
+    //     console.log(landmarkResultList);
+    //     let prediction = machine.classify(landmarkResultList);
+    //     console.log(prediction);
+    // }
 
-    useEffect(() => {
-        createHandLandMarker().then(detectLandMarks);
-        getPosesFromLocalStorage()
-    }, []);
 
     const slideData = [
         {
@@ -117,42 +123,68 @@ const IntroductionSlide = () => {
             id: "2",
             title: "Step 2",
             description: "Description of slide 2",
-            imageUrl:<Image/>
+            imageUrl: <Image/>
         },
         {
             id: "3",
             title: "Step 3",
             description: "Description of slide 3",
-            imageUrl:<Image/>
+            imageUrl: <Image/>
         },
     ]
 
     const data = slideData.map((x) => x);
     const title = data[0].title;
     const description = data[0].description;
-    const image =  data[0].imageUrl;
+    const image = data[0].imageUrl;
     const id = data.map((y) => (y.id))
     console.log(id);
-    let contentSlide1  = [ { id:data[0].id,  title: data[0].title,  description: data[0].description, imageUrl:data[0].imageUrl}]
-    let contentSlide2  = [ { id:data[1].id,  title: data[1].title,  description: data[1].description, imageUrl:data[1].imageUrl}]
-    let contentSlide3  = [ { id:data[2].id, title: data[2].title,  description: data[2].description, imageUrl:data[2].imageUrl}]
-    let contentSlides = [contentSlide1, contentSlide2, contentSlide3]
+    let contentSlide1 = [{
+        id: data[0].id,
+        title: data[0].title,
+        description: data[0].description,
+        imageUrl: data[0].imageUrl
+    }]
+    let contentSlide2 = [{
+        id: data[1].id,
+        title: data[1].title,
+        description: data[1].description,
+        imageUrl: data[1].imageUrl
+    }]
+    let contentSlide3 = [{
+        id: data[2].id,
+        title: data[2].title,
+        description: data[2].description,
+        imageUrl: data[2].imageUrl
+    }]
+    let contentSlides = [contentSlide1, contentSlide2, contentSlide3];
+    // const renderContentSlides = ()=> {
+    //     contentSlides.map((content, key) => <Slide key={key} content={content}/> )
+    // }
     // console.log(id)
 
-    let styleCam = {
+    const styleCam = {
         zIndex: 9,
-        width:390,
-        height:300,
-        position:"absolute",
+        width: 390,
+        height: 300,
+        position: "absolute",
         visibility: true
     }
 
-    let styleCanvas = {
+    const styleCanvas = {
         zIndex: 9,
-        width:390,
-        height:300,
-        position:"absolute",
+        width: 390,
+        height: 300,
+        position: "absolute",
         visibility: true
+    }
+
+    const settings = {
+        dots: true,
+        infinite: true,
+        speed: 500,
+        slidesToShow: 1,
+        slidesToScroll: 1,
     }
 
     return (
@@ -193,7 +225,15 @@ const IntroductionSlide = () => {
                 </div>
                 <div
                     className={"w-full mb-10 bg-blue-50 justify-evenly flex content-between pt-5 mt-80 h-72 border-gray-50"}>
-                    <Slide id={id} content={contentSlides.map((x)=>(x))}/>
+                    {/*<Slide id={id} content={contentSlides.map((x)=>(x))}/>*/}
+                    <AliceCarousel  renderPrevButton={() => {
+                        return  <button className={"relative right-32"}><img src={BackButton}/></button>
+                    }}
+                                    renderNextButton={() => {
+                                        return  <button className={"relative left-32"}><img src={ForwardButton}/></button>
+                                    }}>
+                        {contentSlides.map((content, key) => <Slide key={key} content={content}/>)}
+                    </AliceCarousel>
                 </div>
             </section>
         </>

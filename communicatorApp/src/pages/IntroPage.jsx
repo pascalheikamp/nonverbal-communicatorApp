@@ -10,7 +10,7 @@ function IntroPage() {
             <main>
                 <IntroductionSlide/>
             </main>
-            <Footer />
+            {/*<Footer />*/}
         </>
     )
 }

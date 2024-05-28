@@ -7,18 +7,17 @@ const Slide = ({content}) => {
     console.log(typeof (content));
     console.log(content);
     const res = content.map((x) => (x))
-    console.log(res[0])
 
     let title = ""
     let description = ""
     let id = ""
-    for (let objData of res[0]) {
-        // console.log(objData.title)
-        // console.log(objData)
-        title = objData.title;
-        description = objData.description;
-        id = objData.id;
-    }
+    // for (let objData of res[0]) {
+    //     // console.log(objData.title)
+    //     // console.log(objData)
+    //     title = objData.title;
+    //     description = objData.description;
+    //     id = objData.id;
+    // }
     const titleSlide = useRef(null);
     const descriptionSlide = useRef(null)
     const [currentId, setCurrentId] = useState('1')
@@ -93,14 +92,12 @@ const Slide = ({content}) => {
 
     return (
         <>
-            <button className={"relative left-32"}><img src={BackButton}/></button>
             <div id={currentId} ref={slideContainer} className={"flex mt-10 w-full pl-40 pr-40 ml-32 mr-32  mb-10"}>
                 <img className={"w-52 h-52"} src={Image}/>
                 <div className={" ml-7"}><h2 ref={titleSlide} className={"font-bold text-xl"}>{title}</h2><p
                     ref={descriptionSlide}>{description}</p>
                 </div>
             </div>
-            <button onClick={showNextSlide} className={"relative right-32"}><img src={ForwardButton}/></button>
         </>
     )
 }

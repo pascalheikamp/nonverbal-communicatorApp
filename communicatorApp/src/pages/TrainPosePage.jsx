@@ -38,6 +38,10 @@ function TrainPosePage() {
     //         setDisableToggle(false);
     //     }
     // }
+    useEffect(() => {
+        createHandLandMarker().then(detectLandMarks);
+        getPosesFromLocalStorage()
+    }, []);
 
     const toggleTrainPose = () => {
         setInterval(() => {
@@ -156,10 +160,6 @@ function TrainPosePage() {
         }
     }
 
-    useEffect(() => {
-        createHandLandMarker().then(detectLandMarks);
-        getPosesFromLocalStorage()
-    }, []);
     const styling = {
         position: "absolute",
         top: 200,
