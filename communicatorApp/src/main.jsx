@@ -7,6 +7,7 @@ import './index.css'
 import HomePage from "./pages/HomePage.jsx";
 import TrainPosePage from "./pages/TrainPosePage.jsx";
 import InfoGesturesPage from "./pages/InfoGesturesPage.jsx";
+import GamePage from "./pages/GamePage.jsx";
 
 const router = createBrowserRouter([
     {
@@ -28,6 +29,10 @@ const router = createBrowserRouter([
     {
         path:"international-gestures",
         element: <InfoGesturesPage/>
+    },
+    {
+        path:"game",
+        element: <GamePage/>
     }
 ])
 

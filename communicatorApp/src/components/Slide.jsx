@@ -6,43 +6,12 @@ import ForwardButton from "../assets/forwardButton.png";
 const Slide = ({content}) => {
     console.log(typeof (content));
     console.log(content);
-    const res = content.map((x) => (x))
+    const resTitle = content.map((x) => (x.title))
+    const resDescription = content.map((x) => (x.description))
 
-    let title = ""
-    let description = ""
-    let id = ""
-    // for (let objData of res[0]) {
-    //     // console.log(objData.title)
-    //     // console.log(objData)
-    //     title = objData.title;
-    //     description = objData.description;
-    //     id = objData.id;
-    // }
-    const titleSlide = useRef(null);
-    const descriptionSlide = useRef(null)
-    const [currentId, setCurrentId] = useState('1')
-    const slideContainer = useRef(currentId);
+    let title = resTitle;
+    let description = resDescription;
 
-
-    function showNextSlide() {
-        // let id = ""
-        let title = ""
-        let description = ""
-
-
-        for(let i = 0; i <= res.length; i++) {
-            for(let data of res) {
-                if(slideContainer.current.id === data[i].id)
-                title = data[i].title
-                description = data[i].description
-                id = data[i].id
-
-                titleSlide.current.innerHTML=title
-                descriptionSlide.current.innerHTML=description
-                // titleSlide.current.innerHTML=data[0].id
-                // descriptionSlide.current.innerHTML=data[i].description
-            }
-        }
         // setCurrentId(id)
 
         // console.log(res[0])
@@ -87,17 +56,17 @@ const Slide = ({content}) => {
         //     descriptionSlide.current.innerHTML=description_slide3;
         // }
         // console.log(slideContainer.current)
-    }
+
 
 
     return (
         <>
-            <div id={currentId} ref={slideContainer} className={"flex mt-10 w-full pl-40 pr-40 ml-32 mr-32  mb-10"}>
+            <div className={"flex mt-10 w-full pl-40 pr-40 ml-32 mr-32  mb-10"}>
                 <img className={"w-52 h-52"} src={Image}/>
-                <div className={" ml-7"}><h2 ref={titleSlide} className={"font-bold text-xl"}>{title}</h2><p
-                    ref={descriptionSlide}>{description}</p>
+                <div className={" ml-7"}><h2 className={"font-bold text-xl"}>{title}</h2><p
+                    >{description}</p>
                 </div>
-            </div>
+            </div><div className={"flex justify-center"}> <button className={"text-xl bg-green-600 w-32 h-10 rounded shadow-xl"}> <a href={"/game"}>Play game</a></button></div>
         </>
     )
 }

@@ -121,14 +121,16 @@ const IntroductionSlide = () => {
         },
         {
             id: "2",
-            title: "Step 2",
-            description: "Description of slide 2",
+            title: "Step 2: Remember the pose name",
+            description: "Do the pose without seeing how the pose looks! The only thing that is displayed is the pose name.\n" +
+                "If you do it correctly there will show up a green marker other wise you receive a red marker. (Note: take a look at international gestures page to learn the poses)"
+            ,
             imageUrl: <Image/>
         },
         {
             id: "3",
-            title: "Step 3",
-            description: "Description of slide 3",
+            title: "Step 3: Play the game!",
+            description: "If you know the poses, you will be ready for a new challenge! Click on the button to play the game",
             imageUrl: <Image/>
         },
     ]
