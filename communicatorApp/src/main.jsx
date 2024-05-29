@@ -6,23 +6,28 @@ import App from './App.jsx'
 import './index.css'
 import HomePage from "./pages/HomePage.jsx";
 import TrainPosePage from "./pages/TrainPosePage.jsx";
+import InfoGesturesPage from "./pages/InfoGesturesPage.jsx";
 
 const router = createBrowserRouter([
     {
-        path:'/',
-        element:<App/>,
+        path: '/',
+        element: <App/>,
         children: [{
             path: "/",
             element: <HomePage/>
         }],
     },
     {
-        path:'introduction',
-        element:<IntroPage/>
+        path: 'introduction',
+        element: <IntroPage/>
     },
     {
-        path:"trainpose",
+        path: "trainpose",
         element: <TrainPosePage/>
+    },
+    {
+        path:"international-gestures",
+        element: <InfoGesturesPage/>
     }
 ])
 

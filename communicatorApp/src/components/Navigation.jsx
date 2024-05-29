@@ -10,7 +10,7 @@ function Navigation() {
                     <li><h3 className={"text-white"}>Non vs verbal communication</h3></li>
                     <li><h3 className={"text-white"}><a href={"/trainpose"}>Train pose</a></h3></li>
                     <div className={''}>
-                        <li><h3 className={"text-white"}>Signs</h3></li>
+                        <li><h3 className={"text-white"}><a href={"/international-gestures"}>International gestures</a></h3></li>
                     </div>
                     <li><h3 className={"text-white"}>Create your own sign</h3></li>
                 </div>
