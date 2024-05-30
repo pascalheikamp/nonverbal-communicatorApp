@@ -2,6 +2,8 @@ import Navigation from "../components/Navigation.jsx";
 import CameraArea from "../components/CameraArea.jsx";
 import {Camera} from "@mediapipe/camera_utils";
 import {FilesetResolver, HandLandmarker, DrawingUtils} from "@mediapipe/tasks-vision";
+import GreenCheck from '../assets/green-check.png';
+import WrongMarker from '../assets/wrong-marker.png'
 import {useEffect, useRef, useState} from "react";
 import kNear from "../kNear.js";
 import Webcam from "react-webcam";
@@ -9,15 +11,19 @@ import Webcam from "react-webcam";
 
 function GamePage() {
     const canvasRef = useRef(null);
+    const resultContainer = useRef(null);
     const errorMessageRef = useRef(null);
     const webcamRef = useRef(null);
     const poseNameRef = useRef(null);
     const [inputValue, setInputValue] = useState("");
+    const [randomPoseName, setRandomPoseName] = useState("");
     const [prediction, setPrediction] = useState("");
+    const [goodAnswer, setGoodAnwser] = useState(false);
+    const [timer, setTimer] = useState(5);
     const [showMessage, setShowMessage] = useState("visible");
     const [disableToggle, setDisableToggle] = useState(true);
     let trainPose = false
-    let currentPrediction = false
+    let currentPrediction = true;
     let lastVideoTime = -1
     let pose;
     let handLandMarker;
@@ -40,8 +46,26 @@ function GamePage() {
     // }
     useEffect(() => {
         createHandLandMarker().then(detectLandMarks);
-        getPosesFromLocalStorage()
-    }, []);
+        getPosesFromLocalStorage();
+
+        const interval = setInterval(() => {
+            updateTime();
+        }, 1000);
+
+        return () => {
+            console.log(`clearing interval`);
+            clearInterval(interval);
+        };
+
+    }, [timer]);
+
+    function updateTime() {
+        const newTime = timer -1
+        setTimer(newTime);
+        if(timer === 0) {
+            setTimer(5);
+        }
+    }
 
     const toggleTrainPose = () => {
         setInterval(() => {
@@ -54,10 +78,6 @@ function GamePage() {
         currentPrediction = !currentPrediction
     }
 
-    const removePoses = () => {
-        localStorage.removeItem("coordinates");
-        localStorage.clear();
-    }
 
     const registerPose = (poseDetection, landmarkResults) => {
         if (!landmarkResults[0]) return
@@ -71,9 +91,17 @@ function GamePage() {
         let coordinates = JSON.parse(localStorage.getItem("coordinates"));
         if (!coordinates) return
         for (const coordinate of coordinates) {
+            setRandomPoseName(coordinate.label);
             machine.learn(coordinate.landmarks, coordinate.label)
         }
         console.log(coordinates);
+    }
+
+    function getRandomPoseName() {
+        let names = ["Angry Itilian", "Chinese greeting"]
+        const randomIndex = Math.floor(Math.random() * names.length);
+        setRandomPoseName(names[randomIndex]);
+        console.log(randomPoseName);
     }
 
     const predictPose = (results) => {
@@ -84,8 +112,12 @@ function GamePage() {
         }
         console.log(landmarkResultList);
         let prediction = machine.classify(landmarkResultList);
-        console.log(prediction);
         setPrediction(prediction);
+        if(prediction === randomPoseName) {
+            setGoodAnwser(true);
+        } else {
+            setGoodAnwser(false);
+        }
     }
 
     const addToLocalStorage = (pose, landmarks) => {
@@ -171,7 +203,7 @@ function GamePage() {
     return (
         <>
             <Navigation/>
-            <main>
+            <main className={""}>
                 <section className={"mt-20 ml-auto flex justify-center"}>
                     <Webcam ref={webcamRef} style={styling}/>
                     <canvas ref={canvasRef} style={{
@@ -187,38 +219,18 @@ function GamePage() {
                         height: 480
                     }}></canvas>
                 </section>
-                <div className={"relative bottom-10 flex justify-evenly"}>
+                <div className={"relative bottom-10 flex justify-around"}>
                     <div className={""}>
-                        <form>
-                            <input ref={poseNameRef} placeholder={"pose name..."}
-                                   className={"mr-10 pl-3 border-2 border-primaryColor rounded-3xl"} type={"text"}/>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                                <input onChange={toggleTrainPose} type="checkbox" className="sr-only peer toggle" />
-                                <div className={"w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"}></div>
-                                <p className={"ml-5"}>Train pose</p>
-                            </label>
-                        </form>
-                        <div>
-                            <p ref={errorMessageRef}  className={`mt-2 text-red-500 ${showMessage}`}>Please enter a pose name </p>
-                            <p className={"absolute mt-5 top-10 font-bold"}>The prediction is: {prediction}</p>
-                        </div>
+                        <h2 className={"text-xl"}>Name of pose:</h2>
+                        <p className={"text-center mt-10"}>{randomPoseName}</p>
+                        <div ref={resultContainer} className={"mt-10"}>{goodAnswer ? <img src={WrongMarker}/> : <img src={GreenCheck}/> }</div>
+                        <div className={"rounded-full border-black w-32 h-32 border-2"}><p className={"text-center pt-10"}>{timer}</p></div>
                     </div>
-                    <div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                            <input onChange={togglePredictPose} type="checkbox" className="sr-only peer toggle" />
-                            <div className={"w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"}></div>
-                            <p className={"ml-5"}>Predict pose</p>
-                        </label>
+                    <div className={""}>
+                        <h2 className={"text-2xl"}>The pose game</h2>
                     </div>
-                    <div>
-                        <button onClick={removePoses} className={"rounded shadow-xl w-32 bg-primaryColor"}>Remove poses
-                        </button>
-                    </div>
-                    <div>
-                        <button className={"rounded shadow-xl w-32 bg-primaryColor"}>Open camera</button>
-                    </div>
-                    <div>
-                        <button className={"rounded shadow-xl w-32 bg-primaryColor"}>Close camera</button>
+                    <div className={""}>
+                        <h2 className={"text-xl"}>Total points</h2>
                     </div>
                 </div>
             </main>
