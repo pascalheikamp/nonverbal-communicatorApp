@@ -64,6 +64,7 @@ function GamePage() {
                     }
                 });
             }, 1000)
+            getRandomPoseName();
             return () => clearInterval(interval)
         }
 
@@ -125,10 +126,9 @@ function GamePage() {
     }
 
     function getRandomPoseName() {
-        let names = ["Angry Itilian", "Chinese greeting"]
+        let names = ["The point", "The V Sign", "Chinese greeting", "The fingers all together"];
         const randomIndex = Math.floor(Math.random() * names.length);
         setRandomPoseName(names[randomIndex]);
-        console.log(randomPoseName);
     }
 
     const predictPose = (results) => {
