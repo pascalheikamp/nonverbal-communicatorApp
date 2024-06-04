@@ -12,15 +12,18 @@ import Webcam from "react-webcam";
 function GamePage() {
     const canvasRef = useRef(null);
     const resultContainer = useRef(null);
-    const errorMessageRef = useRef(null);
     const webcamRef = useRef(null);
     const poseNameRef = useRef(null);
     const [inputValue, setInputValue] = useState("");
     const [randomPoseName, setRandomPoseName] = useState("");
     const [prediction, setPrediction] = useState("");
     const [goodAnswer, setGoodAnwser] = useState(false);
-    const [timer, setTimer] = useState(5);
-    const [showMessage, setShowMessage] = useState("visible");
+    const [quizStarted, setQuizStarted] = useState(false);
+    const [currentQuestion, setCurrentQuestion] = useState(0);
+    const [score, setScore] = useState(0);
+    const [timer, setTimer] = useState(10);
+    const [showTimer, setShowTimer] = useState("hidden");
+    const [showAnswer, setShowAnwser] = useState("hidden");
     const [disableToggle, setDisableToggle] = useState(true);
     let trainPose = false
     let currentPrediction = true;
@@ -45,33 +48,57 @@ function GamePage() {
     //     }
     // }
     useEffect(() => {
-        createHandLandMarker().then(detectLandMarks);
-        getPosesFromLocalStorage();
+        if(quizStarted) {
+            createHandLandMarker().then(detectLandMarks);
+            getPosesFromLocalStorage();
 
-        const interval = setInterval(() => {
-            updateTime();
-        }, 1000);
 
-        return () => {
-            console.log(`clearing interval`);
-            clearInterval(interval);
-        };
-
-    }, [timer]);
-
-    function updateTime() {
-        const newTime = timer -1
-        setTimer(newTime);
-        if(timer === 0) {
-            setTimer(5);
+            const interval = setInterval(() => {
+                setTimer(prevTimer => {
+                    if(prevTimer > 0) {
+                        return prevTimer - 1
+                    } else {
+                        setCurrentQuestion(prevQuestion => prevQuestion + 1);
+                        // reset timer for next question
+                        return 10;
+                    }
+                });
+            }, 1000)
+            return () => clearInterval(interval)
         }
+
+        // const interval = setInterval(() => {
+        //     updateTime();
+        // }, 1000);
+        //
+        // return () => {
+        //     console.log(`clearing interval`);
+        //     clearInterval(interval);
+        // };
+
+    }, [currentQuestion, quizStarted]);
+
+    const nextQuestionHandler = ()=> {
+        console.log("You go to next page ")
     }
 
-    const toggleTrainPose = () => {
-        setInterval(() => {
-            trainPose = !trainPose
-            console.log(trainPose)
-        }, 5000)
+    // function updateTime() {
+    //     const newTime = timer -1
+    //     setTimer(newTime);
+    //     if(timer === 0) {
+    //         setTimer(5);
+    //     }
+    // }
+
+    // const toggleTrainPose = () => {
+    //     setInterval(() => {
+    //         trainPose = !trainPose
+    //         console.log(trainPose)
+    //     }, 5000)
+    // }
+    const startGame = () => {
+        setQuizStarted(true);
+        setShowTimer("visible");
     }
 
     const togglePredictPose = () => {
@@ -110,13 +137,14 @@ function GamePage() {
         for (let landmarkPose of results[0]) {
             landmarkResultList.push(landmarkPose.x, landmarkPose.y);
         }
-        console.log(landmarkResultList);
         let prediction = machine.classify(landmarkResultList);
         setPrediction(prediction);
         if(prediction === randomPoseName) {
             setGoodAnwser(true);
+            setShowAnwser("visible");
         } else {
             setGoodAnwser(false);
+            setShowAnwser("visible");
         }
     }
 
@@ -219,15 +247,21 @@ function GamePage() {
                         height: 480
                     }}></canvas>
                 </section>
-                <div className={"relative bottom-10 flex justify-around"}>
-                    <div className={""}>
-                        <h2 className={"text-xl"}>Name of pose:</h2>
+                <div className={"relative bottom-12 flex justify-around"}>
+                    <h2 className={"text-xl"}>Name of pose:</h2>
+                    <div onLoad={goodAnswer ? nextQuestionHandler : "please try again"} className={"relative right-80 mr-52"}>
                         <p className={"text-center mt-10"}>{randomPoseName}</p>
-                        <div ref={resultContainer} className={"mt-10"}>{goodAnswer ? <img src={WrongMarker}/> : <img src={GreenCheck}/> }</div>
-                        <div className={"rounded-full border-black w-32 h-32 border-2"}><p className={"text-center pt-10"}>{timer}</p></div>
+                        <div
+                            className={`${showTimer} rounded-xl bg-black/25 backdrop-blur-sm py-3 min-w-[96px] flex items-center justify-center flex-col gap-1 px-3`}>
+                            <h3
+                                className="countdown-element seconds font-manrope font-semibold text-2xl text-white text-center">
+                            </h3>
+                            <p className="text-lg fo uppercasent-normal text-white mt-1 text-center w-full"> {timer} Seconds</p>
+                        </div>
+                        <div ref={resultContainer} className={`mt-10 ${showAnswer}`}>{goodAnswer ? <img src={WrongMarker}/> : <img src={GreenCheck}/> }</div>
                     </div>
                     <div className={""}>
-                        <h2 className={"text-2xl"}>The pose game</h2>
+                        <button onClick={startGame} className={"bg-green-900 pl-3 pr-3 rounded h-12"}><h2 className={" text-white text-2xl"}>Start game</h2></button>
                     </div>
                     <div className={""}>
                         <h2 className={"text-xl"}>Total points</h2>
