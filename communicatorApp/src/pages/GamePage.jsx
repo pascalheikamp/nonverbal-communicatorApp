@@ -13,8 +13,6 @@ function GamePage() {
     const canvasRef = useRef(null);
     const resultContainer = useRef(null);
     const webcamRef = useRef(null);
-    const poseNameRef = useRef(null);
-    const [inputValue, setInputValue] = useState("");
     const [randomPoseName, setRandomPoseName] = useState("");
     const [prediction, setPrediction] = useState("");
     const [goodAnswer, setGoodAnwser] = useState(false);
@@ -25,37 +23,35 @@ function GamePage() {
     const [showTimer, setShowTimer] = useState("hidden");
     const [showAnswer, setShowAnwser] = useState("hidden");
     const [disableToggle, setDisableToggle] = useState(true);
-    let trainPose = false
+    const limit = 5;
     let currentPrediction = true;
     let lastVideoTime = -1
     let pose;
     let handLandMarker;
     let machine = new kNear(3);
 
-    // function handleInputChange(event) {
-    //     setInputValue(event.target.value);
-    //     if (inputValue.trim() === "") {
-    //         setShowMessage("visible")
-    //         setDisableToggle(true);
-    //     }
-    //     else if(event.target.value.length === 0) {
-    //         setShowMessage("visible")
-    //         setDisableToggle(true)
-    //     }
-    //     else if(event.target.value.length > 0) {
-    //         setShowMessage("hidden")
-    //         setDisableToggle(false);
-    //     }
-    // }
+
     useEffect(() => {
-        if(quizStarted) {
-            createHandLandMarker().then(detectLandMarks);
-            getPosesFromLocalStorage();
+        if (quizStarted) {
+            const checkAnswer = (currentPrediction, currentRandomPoseName) => {
+                console.log("random is" + currentRandomPoseName)
+                console.log("prediction" + currentPrediction)
+                if (currentPrediction === currentRandomPoseName) {
+                    setGoodAnwser(false)
+                    setScore(prevScore => prevScore + 1)
+                    setShowAnwser("visible")
+                } else {
+                    setGoodAnwser(true)
+                    setShowAnwser("visible");
+                }
+            }
+
+            checkAnswer(prediction, randomPoseName)
 
 
             const interval = setInterval(() => {
                 setTimer(prevTimer => {
-                    if(prevTimer > 0) {
+                    if (prevTimer > 0) {
                         return prevTimer - 1
                     } else {
                         setCurrentQuestion(prevQuestion => prevQuestion + 1);
@@ -68,20 +64,21 @@ function GamePage() {
             return () => clearInterval(interval)
         }
 
-        // const interval = setInterval(() => {
-        //     updateTime();
-        // }, 1000);
-        //
-        // return () => {
-        //     console.log(`clearing interval`);
-        //     clearInterval(interval);
-        // };
 
     }, [currentQuestion, quizStarted]);
 
-    const nextQuestionHandler = ()=> {
-        console.log("You go to next page ")
-    }
+    useEffect(() => {
+        createHandLandMarker().then(detectLandMarks);
+        getPosesFromLocalStorage();
+
+        if (currentQuestion === limit) {
+            setQuizStarted(false)
+        } else {
+            console.log("not yet")
+        }
+    }, [currentQuestion]);
+
+
 
     // function updateTime() {
     //     const newTime = timer -1
@@ -126,7 +123,7 @@ function GamePage() {
     }
 
     function getRandomPoseName() {
-        let names = ["The point", "The V Sign", "Chinese greeting", "The fingers all together"];
+        let names = ["The point", "The V sign", "Chinese greeting", "The fingers all together"];
         const randomIndex = Math.floor(Math.random() * names.length);
         setRandomPoseName(names[randomIndex]);
     }
@@ -139,13 +136,6 @@ function GamePage() {
         }
         let prediction = machine.classify(landmarkResultList);
         setPrediction(prediction);
-        if(prediction === randomPoseName) {
-            setGoodAnwser(true);
-            setShowAnwser("visible");
-        } else {
-            setGoodAnwser(false);
-            setShowAnwser("visible");
-        }
     }
 
     const addToLocalStorage = (pose, landmarks) => {
@@ -249,8 +239,8 @@ function GamePage() {
                 </section>
                 <div className={"relative bottom-12 flex justify-around"}>
                     <h2 className={"text-xl"}>Name of pose:</h2>
-                    <div onLoad={goodAnswer ? nextQuestionHandler : "please try again"} className={"relative right-80 mr-52"}>
-                        <p className={"text-center mt-10"}>{randomPoseName}</p>
+                    <div className={"relative right-80 mr-52"}>
+                        <p className={`${showTimer} text-center mt-10`}><p className={"font-bold"}>Pose {currentQuestion}</p>{randomPoseName}</p>
                         <div
                             className={`${showTimer} rounded-xl bg-black/25 backdrop-blur-sm py-3 min-w-[96px] flex items-center justify-center flex-col gap-1 px-3`}>
                             <h3
@@ -258,13 +248,16 @@ function GamePage() {
                             </h3>
                             <p className="text-lg fo uppercasent-normal text-white mt-1 text-center w-full"> {timer} Seconds</p>
                         </div>
-                        <div ref={resultContainer} className={`mt-10 ${showAnswer}`}>{goodAnswer ? <img src={WrongMarker}/> : <img src={GreenCheck}/> }</div>
+                        <div ref={resultContainer} className={`mt-10 ${showAnswer}`}>{goodAnswer ?
+                            <img src={WrongMarker}/> : <img src={GreenCheck}/>}</div>
                     </div>
                     <div className={""}>
-                        <button onClick={startGame} className={"bg-green-900 pl-3 pr-3 rounded h-12"}><h2 className={" text-white text-2xl"}>Start game</h2></button>
+                        <button onClick={startGame} className={"bg-green-900 pl-3 pr-3 rounded h-12"}><h2
+                            className={" text-white text-2xl"}>Start game</h2></button>
                     </div>
                     <div className={""}>
                         <h2 className={"text-xl"}>Total points</h2>
+                        <h3>{score}</h3>
                     </div>
                 </div>
             </main>
