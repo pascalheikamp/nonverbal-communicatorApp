@@ -1,8 +1,8 @@
 import Navigation from "../components/Navigation.jsx";
 import CameraArea from "../components/CameraArea.jsx";
-import {Camera} from "@mediapipe/camera_utils";
-import {FilesetResolver, HandLandmarker, DrawingUtils} from "@mediapipe/tasks-vision";
-import {useEffect, useRef, useState} from "react";
+import { Camera } from "@mediapipe/camera_utils";
+import { FilesetResolver, HandLandmarker, DrawingUtils } from "@mediapipe/tasks-vision";
+import { useEffect, useRef, useState } from "react";
 import kNear from "../kNear.js";
 import Webcam from "react-webcam";
 
@@ -12,11 +12,13 @@ function TrainPosePage() {
     const errorMessageRef = useRef(null);
     const webcamRef = useRef(null);
     const poseNameRef = useRef(null);
+    const [accuracy, setAccuracy] = useState(null);
     const [inputValue, setInputValue] = useState("");
     const [prediction, setPrediction] = useState("");
     const [showMessage, setShowMessage] = useState("visible");
     const [disableToggle, setDisableToggle] = useState(true);
     let trainPose = false
+    let trainTestData = false
     let currentPrediction = false
     let lastVideoTime = -1
     let pose;
@@ -50,6 +52,13 @@ function TrainPosePage() {
         }, 5000)
     }
 
+    const toggleTrainTestData = () => {
+        setInterval(() => {
+            trainTestData = !trainTestData
+            console.log(trainTestData)
+        }, 5000)
+    }
+
     const togglePredictPose = () => {
         currentPrediction = !currentPrediction
     }
@@ -67,6 +76,14 @@ function TrainPosePage() {
         addToLocalStorage(poseDetection, landmarkResultList)
     }
 
+    const registerTestData = (poseDetection, landmarkResults) => {
+        if (!landmarkResults[0]) return
+        let landmarkResultList = landmarkResults[0]?.flatMap(landmarkPose => [landmarkPose.x, landmarkPose.y]) || [];
+        console.log(landmarkResultList)
+
+        addToLocalStorageTestData(poseDetection, landmarkResultList)
+    }
+
     function getPosesFromLocalStorage() {
         let coordinates = JSON.parse(localStorage.getItem("coordinates"));
         if (!coordinates) return
@@ -74,6 +91,43 @@ function TrainPosePage() {
             machine.learn(coordinate.landmarks, coordinate.label)
         }
         console.log(coordinates);
+    }
+
+    const calculateAccuracy = (predictedLandmarks) => {
+        let testData = JSON.parse(localStorage.getItem("testData"));
+        if(!testData || testData.length === 0) {
+            console.log("No test data found in localStorage")
+            return 0;
+        }
+
+        // let totalError = 0;
+        let bestMatch = null;
+        let lowestError = Infinity
+
+        for (let testPose of testData) {
+            let poseError = 0;
+    
+            for (let i = 0; i < testPose.landmarks.length; i += 2) {
+                let x1 = testPose.landmarks[i];
+                let y1 = testPose.landmarks[i + 1];
+                let x2 = predictedLandmarks[i];
+                let y2 = predictedLandmarks[i + 1];
+    
+                if (x2 !== undefined && y2 !== undefined) {
+                    poseError += Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+                }
+            }
+    
+            if (poseError < lowestError) {
+                lowestError = poseError;
+                bestMatch = testPose.label;
+            }
+        }
+    
+        let accuracy = 100 - (lowestError * 10); // Scale error to a percentage
+        accuracy = Math.max(0, accuracy); // Ensure it doesn't go below 0%
+    
+        return { accuracy, bestMatch };
     }
 
     const predictPose = (results) => {
@@ -86,6 +140,25 @@ function TrainPosePage() {
         let prediction = machine.classify(landmarkResultList);
         console.log(prediction);
         setPrediction(prediction);
+
+        const {accuracy, bestMatch} = calculateAccuracy(landmarkResultList)
+        setAccuracy(accuracy.toFixed(2));
+        console.log(`Best match: ${bestMatch}, Accuracy: ${accuracy}%`);
+    }
+
+    const addToLocalStorageTestData = (pose, landmarks) => {
+        let poseObj = {
+            label: pose,
+            landmarks: landmarks
+        }
+        let storage = localStorage.getItem("testData")
+        let parsedList = JSON.parse(storage);
+        if (parsedList == null) {
+            parsedList = []
+        }
+        parsedList.push(poseObj);
+        let stringifiedList = JSON.stringify(parsedList);
+        localStorage.setItem("testData", stringifiedList)
     }
 
     const addToLocalStorage = (pose, landmarks) => {
@@ -137,6 +210,9 @@ function TrainPosePage() {
                     if (result.landmarks) {
                         pose = result.landmarks
                         // console.log(pose);
+                        if(trainTestData) {
+                            registerTestData(poseNameRef.current.value, pose)
+                        }
                         if (trainPose) {
                             console.log(pose);
                             registerPose(poseNameRef.current.value, pose)
@@ -174,10 +250,10 @@ function TrainPosePage() {
     }
     return (
         <>
-            <Navigation/>
+            <Navigation />
             <main>
                 <section className={"mt-20 ml-auto flex justify-center"}>
-                    <Webcam ref={webcamRef} style={styling}/>
+                    <Webcam ref={webcamRef} style={styling} />
                     <canvas ref={canvasRef} style={{
                         position: "absolute",
                         top: 200,
@@ -194,17 +270,25 @@ function TrainPosePage() {
                 <div className={"relative bottom-10 flex justify-evenly"}>
                     <div className={""}>
                         <form>
-                        <input ref={poseNameRef} placeholder={"pose name..."}
-                               className={"mr-10 pl-3 border-2 border-primaryColor rounded-3xl"} type={"text"}/>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                            <input onChange={toggleTrainPose} type="checkbox" className="sr-only peer toggle" />
-                            <div className={"w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"}></div>
-                            <p className={"ml-5"}>Train pose</p>
-                        </label>
+                            <input ref={poseNameRef} placeholder={"pose name..."}
+                                className={"mr-10 pl-3 border-2 border-primaryColor rounded-3xl"} type={"text"} />
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input onChange={toggleTrainPose} type="checkbox" className="sr-only peer toggle" />
+                                <div className={"w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"}></div>
+                                <p className={"ml-5"}>Train pose</p>
+                            </label>
+                            <label className="relative inline-flex ml-5 items-center cursor-pointer">
+                                <input onChange={toggleTrainTestData} type="checkbox" className="sr-only peer toggle" />
+                                <div className={"w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"}></div>
+                                <p className={"ml-5"}>Train test data</p>
+                            </label>
                         </form>
                         <div>
-                            <p ref={errorMessageRef}  className={`mt-2 text-red-500 ${showMessage}`}>Please enter a pose name </p>
+                            <p ref={errorMessageRef} className={`mt-2 text-red-500 ${showMessage}`}>Please enter a pose name </p>
                             <p className={"absolute mt-5 top-10 font-bold"}>The prediction is: {prediction}</p>
+                        </div>
+                        <div className="mt-10">
+                            <p className="mt-3">The accuracy: {accuracy} %</p>
                         </div>
                     </div>
                     <div>

@@ -1,3 +1,7 @@
+/*
+ *   Copyright (c) 2025 
+ *   All rights reserved.
+ */
 // https://www.npmjs.com/package/knear with added error messages and constructor to init with dataset
 
 export default class kNear {
